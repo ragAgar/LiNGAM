@@ -41,4 +41,5 @@ array([[ 0.        ,  0.        ],
 
 This means correct result.
   x =    0*x + 0*y + e1 = e1
+  
   y = 2.99*x + 0*y + e2 = 2.99x + e2
