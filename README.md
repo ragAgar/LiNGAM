@@ -1,0 +1,2 @@
+# LiNGAM
+lingam python code
