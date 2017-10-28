@@ -1,7 +1,6 @@
 # LiNGAM
 lingam python code(lingam.py)
-
-If you want to use sklearn's FastICA inside,
+You can find causal structure of variables using ICA-LiNGAM.[LiNGAM paper](http://www.jmlr.org/papers/volume7/shimizu06a/shimizu06a.pdf)
 
 ### 1. Ready data that you want to know causal structure.(LiNGAM only can use Continuous variables.)
 
