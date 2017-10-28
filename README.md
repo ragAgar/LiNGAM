@@ -9,6 +9,7 @@ If you want to use sklearn's FastICA inside,
 import numpy as np
 import pandas as pd
 
+size = 10000
 np.random.seed(2017)
 x = np.random.uniform(size=size)
 
@@ -31,3 +32,14 @@ or
 lingam = LiNGAM()
 lingam.fit(X,use_sklearn=True)
 ```
+
+And, get result(same result).
+
+```result
+array([[ 0.        ,  0.        ],
+       [ 2.99149033,  0.        ]])
+```      
+
+This means correct result.
+  x =    0*x + 0*y + e1 = e1
+  y = 2.99*x + 0*y + e2 = 2.99x + e2
