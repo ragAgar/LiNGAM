@@ -20,6 +20,7 @@ X = pd.DataFrame(np.asarray([x,y]).T,columns=["x","y"])
 
 ### 2. Use LiNGAM. Select ICA method kurtosis(default) or negentropy(sklearn).
 
+kurtosis
 ```python3
 lingam = LiNGAM()
 lingam.fit(X)
@@ -27,6 +28,7 @@ lingam.fit(X)
 
 or 
 
+negentropy
 ```python3
 lingam = LiNGAM()
 lingam.fit(X,use_sklearn=True)
