@@ -35,7 +35,7 @@ lingam.fit(X,use_sklearn=True)
 
 And, get result(same result).
 
-```result
+```result:result
 array([[ 0.        ,  0.        ],
        [ 2.99149033,  0.        ]])
 ```      
