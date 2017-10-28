@@ -46,14 +46,14 @@ class LiNGAM():
         X_np = self._pd2np(X)
         #return X_np
         (n_samples,self.n_dim)  = X_np.shape
-        X_center   = self._centerize(X_np)
-        PDW        = self._calc_PDW(X_center,use_sklearn=use_sklearn)
-        P_hat      = self._P_hat(PDW)
-        D_hat,DW   = self._PW(P_hat,PDW)
-        B_hat      = self._B_hat(D_hat,DW)
-        P_dot      = self._P_dot(B_hat)
-        B_prune    = self._B_prune(P_dot,B_hat)
-        return self._regression_B(X_np,B_prune,n_samples)
+        self.X_center           = self._centerize(X_np)
+        self.PDW                = self._calc_PDW(self.X_center, use_sklearn=use_sklearn)
+        self.P_hat              = self._P_hat(self.PDW)
+        self.D_hat,self.DW      = self._PW(self.P_hat, self.PDW)
+        self.B_hat              = self._B_hat(self.D_hat, self.DW)
+        self.P_dot              = self._P_dot(self.B_hat)
+        self.B_prune            = self._B_prune(self.P_dot, self.B_hat)
+        return self._regression_B(X_np, self.B_prune,n_samples)
 
     #if X is pandas DataFrame, convert numpy
     def _pd2np(self,X):
