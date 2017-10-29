@@ -5,6 +5,18 @@ from sklearn.decomposition import FastICA
 from sklearn.linear_model import LinearRegression
 from scipy.optimize import linear_sum_assignment
 """
+Input:
+    X:
+        shape (n_samples, n_variables)
+
+    use_sklearn:
+        boolen value. Choose negentropy(sklearn's FastICA) or kurtosis(default).
+
+    print_result:
+        boolen value. if True, the result will be printed. 
+        ex.) x ---|strength|---> y
+        x is the cause, y is the effect.
+
 Model:
     X = BX + e
     X = Ae
@@ -15,6 +27,7 @@ Model:
     B: Causality Matrix
     e: Exogenous variable
     z: whitening variable(check, np.cov(z) is identity matrix))
+
 
 LiNGAM Estimation:
     STEP1:
@@ -42,25 +55,30 @@ class LiNGAM():
     def __init__(self,epsilon=1e-25):
         self.epsilon = epsilon
 
-    def fit(self, X, use_sklearn=False):
+    def fit(self, X, use_sklearn=False,print_result=True):
+        self.print_result = print_result
+        self.n_samples, self.n_dim  = X.shape
         X_np = self._pd2np(X)
         #return X_np
-        (n_samples,self.n_dim)  = X_np.shape
         self.X_center           = self._centerize(X_np)
-        self.PDW                = self._calc_PDW(self.X_center, use_sklearn=use_sklearn)
-        self.P_hat              = self._P_hat(self.PDW)
-        self.D_hat,self.DW      = self._PW(self.P_hat, self.PDW)
-        self.B_hat              = self._B_hat(self.D_hat, self.DW)
-        self.P_dot              = self._P_dot(self.B_hat)
-        self.B_prune            = self._B_prune(self.P_dot, self.B_hat)
-        return self._regression_B(X_np, self.B_prune,n_samples)
+        self.PDW                = self._calc_PDW(use_sklearn=use_sklearn)
+        self.P_hat              = self._P_hat()
+        self.D_hat,self.DW      = self._PW()
+        self.B_hat              = self._B_hat()
+        self.P_dot              = self._P_dot()
+        self.B_prune            = self._B_prune()
+        self.B                  = self._regression_B(X_np)
+        self.result_print()
+        return self.B
 
     #if X is pandas DataFrame, convert numpy
     def _pd2np(self,X):
         if type(X) == pd.core.frame.DataFrame:
             X_np = np.asarray(X)
+            self.columns = X.columns
         else:
             X_np = X.copy()
+            self.columns = ["X%s"%(i) for i in range(self.n_dim)]         
         return X_np
 
     #centerize X by X's col
@@ -91,51 +109,49 @@ class LiNGAM():
         return PDW
 
     #Estimate P
-    def _P_hat(self,PDW):
-        PDW[PDW == 0] = self.epsilon
-        row_ind, col_ind = linear_sum_assignment(1/np.abs(PDW))
+    def _P_hat(self):
+        self.PDW[self.PDW == 0] = self.epsilon
+        row_ind, col_ind = linear_sum_assignment(1/np.abs(self.PDW))
         P = np.zeros((len(row_ind),len(col_ind)))
         for i,j in  zip(row_ind,col_ind):
             P[i,j] = 1
         return P
 
     #Estimate D and DW
-    def _PW(self,P_hat,PDW):
-        DW = P_hat.dot(PDW)
+    def _PW(self):
+        DW = self.P_hat.dot(self.PDW)
         return np.diag(np.diag(DW)),DW
 
     #Estimate W and B
-    def _B_hat(self,D_hat,DW):
-        W_hat = np.linalg.inv(D_hat).dot(DW)
+    def _B_hat(self):
+        W_hat = np.linalg.inv(self.D_hat).dot(self.DW)
         B_hat = np.eye(len(W_hat))-W_hat
         return B_hat
 
     #Estimate P (permute B by causal order)
-    def _P_dot(self,B_hat):
-        n_dim = B_hat.shape[0]
+    def _P_dot(self):
         P_dot_lists = self._get_P_dot_lists()
-        score = [self._calc_PBP_upper(P_dot,B_hat) for P_dot in P_dot_lists]
+        score = [self._calc_PBP_upper(P_dot, self.B_hat) for P_dot in P_dot_lists]
         return P_dot_lists[np.argmin(score)]
 
     #Prune B
-    def _B_prune(self,P_dot,B_hat):
-        B_prune = P_dot.dot(B_hat).dot(P_dot)
+    def _B_prune(self):
+        B_prune = self.P_dot.dot(self.B_hat).dot(self.P_dot)
         for i in range(self.n_dim):
             for j in range(i,self.n_dim):
                 B_prune[i,j] = 0
-        return P_dot.dot(B_prune).dot(P_dot)
+        return self.P_dot.dot(B_prune).dot(self.P_dot)
 
     #Peplace B values with Regression coef
-    def _regression_B(self,X,B_prune,n_samples):
-        causal_matrix = B_prune.copy()
-        n_dim = causal_matrix.shape[1]
-        reg_list = {i:causal_matrix[i,:] != 0 for i in range(n_dim)}
+    def _regression_B(self,X):
+        causal_matrix = self.B_prune.copy()
+        reg_list = {i:causal_matrix[i,:] != 0 for i in range(self.n_dim)}
         for i in range(self.n_dim):
             if np.sum(reg_list[i]) != 0:
                 y_reg = X[:,i]
                 X_reg = X.T[reg_list[i]].T
                 clf = LinearRegression()
-                clf.fit(y=y_reg.reshape(n_samples,-1), X=X_reg.reshape(n_samples,-1))
+                clf.fit(y=y_reg.reshape(self.n_samples,-1), X=X_reg.reshape(self.n_samples,-1))
                 causal_matrix[i,reg_list[i]] = clf.coef_
         return causal_matrix
 
@@ -170,15 +186,15 @@ class LiNGAM():
         A = FastICA(n_components=self.n_dim).fit(X).mixing_
         return np.linalg.inv(A)
 
-    def _calc_PDW(self,X,use_sklearn):
+    def _calc_PDW(self,use_sklearn):
         #use FastICA(kurtosis)
         if not use_sklearn:
-            z, V   = self._whitening(X)
+            z, V   = self._whitening(self.X_center)
             W_z    = self._ICA(z,500)
             PDW    = self._PDW(W_z,V)
         #use sklearn's FastICA(neg entropy)
         else:
-            PDW    = self._W_sklearn(X)
+            PDW    = self._W_sklearn(self.X_center)
         return PDW
 
     #GS orthogonalization
@@ -204,3 +220,11 @@ class LiNGAM():
     #get PBP to minimize upper triangle value
     def _calc_PBP_upper(self,P_dot,B_hat):
         return self._get_upper_triangle( P_dot.dot(B_hat).dot(P_dot.T)**2)
+
+    #print result
+    def result_print(self):
+        if self.print_result:
+            for i,b in enumerate(self.columns):
+                for j,a in enumerate(self.columns):
+                    if self.B[i,j]!=0:
+                        print(a,"---|%.3f|--->"%(self.B[i,j]),b)
