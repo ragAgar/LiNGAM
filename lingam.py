@@ -52,8 +52,9 @@ LiNGAM Estimation:
 
 """
 class LiNGAM():
-    def __init__(self,epsilon=1e-25):
-        self.epsilon = epsilon
+    def __init__(self,epsilon=1e-25,random_state=0):
+        self.epsilon      = epsilon
+        self.random_state = random_state
 
     def fit(self, X, use_sklearn=False,print_result=True):
         self.print_result = print_result
@@ -88,7 +89,7 @@ class LiNGAM():
     #whitening using Eigenvalue decomposition
     def _whitening(self,X):
         E, D, E_t = np.linalg.svd(np.cov(X, rowvar=0, bias=0), full_matrices=True)
-        ##check
+        ##変えなきゃいけない
         D = np.diag(D**(-0.5))
         V = E.dot(D).dot(E_t) #whitening matrix
         return V.dot(X.T),V
@@ -105,10 +106,10 @@ class LiNGAM():
 
     #Estimate W of Wz = s
     def _ICA(self,z,max_iter):
-        dim = z.shape[0]
-        W_init = np.random.uniform(size=[dim,dim])
+        np.random.seed(self.random_state)
+        W_init = np.random.uniform(size=[self.n_dim,self.n_dim])
         W = np.ones(W_init.shape)
-        for i in range(dim):
+        for i in range(self.n_dim):
             W[i,:] = self._calc_w(W_init[i,:],W,z,max_iter,i)
         return W
 
