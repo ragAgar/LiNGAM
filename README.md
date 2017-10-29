@@ -37,9 +37,11 @@ lingam.fit(X,use_sklearn=True)
 
 And, get result(same result).
 
-```result:result
+```result
+x ---|3.018|---> y
+Out[12]:
 array([[ 0.        ,  0.        ],
-       [ 2.99149033,  0.        ]])
+       [ 3.01848554,  0.        ]])
 ```      
 
 This means correct result.
