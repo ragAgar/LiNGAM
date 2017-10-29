@@ -87,10 +87,21 @@ class LiNGAM():
 
     #whitening using Eigenvalue decomposition
     def _whitening(self,X):
+        E, D, E_t = np.linalg.svd(np.cov(X, rowvar=0, bias=0), full_matrices=True)
+        ##変えなきゃいけない
+        D = np.diag(D**(-0.5))
+        V = E.dot(D).dot(E_t) #whitening matrix
+        return V.dot(X.T),V
+    """
+    #whitening using Eigenvalue decomposition
+    def _old_whitening(self,X):
         eigen, E = np.linalg.eig(np.cov(X, rowvar=0, bias=0))
+        #eigen
+        eigen[eigen<0] = -eigen[eigen<0]
         D = np.diag(eigen**(-1/2))
         V = E.dot(D).dot(E.T) #whitening matrix
         return V.dot(X.T),V
+    """
 
     #Estimate W of Wz = s
     def _ICA(self,z,max_iter):
