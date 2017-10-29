@@ -16,7 +16,11 @@ Input:
         boolen value. if True, the result will be printed. 
         ex.) x ---|strength|---> y
         x is the cause, y is the effect.
-
+        
+Output:
+    the matrix of causal structure.
+    x = Bx + e. B is return value
+    
 Model:
     X = BX + e
     X = Ae
