@@ -88,7 +88,7 @@ class LiNGAM():
     #whitening using Eigenvalue decomposition
     def _whitening(self,X):
         E, D, E_t = np.linalg.svd(np.cov(X, rowvar=0, bias=0), full_matrices=True)
-        ##変えなきゃいけない
+        ##check
         D = np.diag(D**(-0.5))
         V = E.dot(D).dot(E_t) #whitening matrix
         return V.dot(X.T),V
