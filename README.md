@@ -2,9 +2,7 @@
 lingam python code(lingam.py)
 You can find causal structure of variables using ICA-LiNGAM.
 
-Reference: [LiNGAM paper](http://www.jmlr.org/papers/volume7/shimizu06a/shimizu06a.pdf)
-
-[Qiita(Japanese)](https://qiita.com/ragAgar/items/131b17171b93f63d6475)
+Reference: [LiNGAM paper](http://www.jmlr.org/papers/volume7/shimizu06a/shimizu06a.pdf), [Qiita(Japanese)](https://qiita.com/ragAgar/items/131b17171b93f63d6475)
 
 ### 1. Ready data that you want to know causal structure.(LiNGAM only can use Continuous variables.)
 
