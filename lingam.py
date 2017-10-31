@@ -13,14 +13,14 @@ Input:
         boolen value. Choose negentropy(sklearn's FastICA) or kurtosis(default).
 
     print_result:
-        boolen value. if True, the result will be printed. 
+        boolen value. if True, the result will be printed.
         ex.) x ---|strength|---> y
         x is the cause, y is the effect.
-        
+
 Output:
     the matrix of causal structure.
     x = Bx + e. B is return value
-    
+
 Model:
     X = BX + e
     X = Ae
@@ -60,8 +60,9 @@ class LiNGAM():
         self.epsilon      = epsilon
         self.random_state = random_state
 
-    def fit(self, X, use_sklearn=False,print_result=True):
+    def fit(self, X, use_sklearn=False,print_result=True,n_iter=1000):
         self.print_result = print_result
+        self.n_iter       = n_iter
         self.n_samples, self.n_dim  = X.shape
         X_np = self._pd2np(X)
         #return X_np
@@ -83,7 +84,7 @@ class LiNGAM():
             self.columns = X.columns
         else:
             X_np = X.copy()
-            self.columns = ["X%s"%(i) for i in range(self.n_dim)]         
+            self.columns = ["X%s"%(i) for i in range(self.n_dim)]
         return X_np
 
     #centerize X by X's col
@@ -152,11 +153,11 @@ class LiNGAM():
 
     #Prune B
     def _B_prune(self):
-        B_prune = self.P_dot.dot(self.B_hat).dot(self.P_dot)
+        B_prune = self.P_dot.dot(self.B_hat).dot(self.P_dot.T)
         for i in range(self.n_dim):
             for j in range(i,self.n_dim):
                 B_prune[i,j] = 0
-        return self.P_dot.dot(B_prune).dot(self.P_dot)
+        return self.P_dot.T.dot(B_prune).dot(self.P_dot)
 
     #Peplace B values with Regression coef
     def _regression_B(self,X):
@@ -206,7 +207,7 @@ class LiNGAM():
         #use FastICA(kurtosis)
         if not use_sklearn:
             z, V   = self._whitening(self.X_center)
-            W_z    = self._ICA(z,500)
+            W_z    = self._ICA(z,self.n_iter)
             PDW    = self._PDW(W_z,V)
         #use sklearn's FastICA(neg entropy)
         else:
