@@ -56,11 +56,11 @@ LiNGAM Estimation:
 
 """
 class LiNGAM():
-    def __init__(self,epsilon=1e-25,random_state=0):
+    def __init__(self,epsilon=1e-25):
         self.epsilon      = epsilon
-        self.random_state = random_state
 
-    def fit(self, X, use_sklearn=False,print_result=True,n_iter=1000):
+    def fit(self, X, use_sklearn=False,print_result=True,n_iter=1000,random_state=0):
+        self.random_state = random_state
         self.print_result = print_result
         self.n_iter       = n_iter
         self.n_samples, self.n_dim  = X.shape
@@ -89,13 +89,13 @@ class LiNGAM():
 
     #centerize X by X's col
     def _centerize(self,X):
-        return np.asarray([X[:,i]-i_mean for i,i_mean in enumerate(np.mean(X,axis=0))]).T    
+        return X - np.mean(X,axis=0)
 
     #whitening using Eigenvalue decomposition
     def _whitening(self,X):
         E, D, E_t = np.linalg.svd(np.cov(X, rowvar=0, bias=0), full_matrices=True)
         ##変えなきゃいけない
-        D = np.diag(D**(-0.5))
+        D = np.diag(D**(-1/2))
         V = E.dot(D).dot(E_t) #whitening matrix
         return V.dot(X.T),V
     """
@@ -113,14 +113,14 @@ class LiNGAM():
     def _ICA(self,z,max_iter):
         np.random.seed(self.random_state)
         W_init = np.random.uniform(size=[self.n_dim,self.n_dim])
-        W = np.ones(W_init.shape)
+        W = np.zeros(W_init.shape)
         for i in range(self.n_dim):
-            W[i,:] = self._calc_w(W_init[i,:],W,z,max_iter,i)
+            W[i,:] = self._calc_w(W_init[i,:], W, z, max_iter, i)
         return W
 
     #Estimate PDW
     def _PDW(self,W,V):
-        A_tilde = W.T
+        A_tilde = np.linalg.inv(W)
         A = np.linalg.inv(V).dot(A_tilde)
         PDW = np.linalg.inv(A)
         return PDW
@@ -180,18 +180,20 @@ class LiNGAM():
 
     #calculate w
     def _calc_w(self,w_init,W,z,max_iter,i):
-        w_t_1 = w_init
-        for iteration_time in range(max_iter):
+        w_t_1  = w_init.copy()
+        W_copy = W.copy()
+        for iter_time in range(max_iter):
             w_t = self._ICA_update(w_t_1,z)
             #w_list.append(np.abs(np.dot(w_t,w_t_1)-1))
-            if (np.abs(np.dot(w_t,w_t_1)-1) < self.epsilon) or (iteration_time == (max_iter-1)):
+            if (np.abs(np.dot(w_t,w_t_1)-1) < self.epsilon) or (iter_time == (max_iter-1)):
                 #without orthogonalization
                 if i==0:
                     return w_t
                 #orthogonalization
                 else:
-                    w_t = self._calc_gs(W=W,i=i)
-                    if (np.abs(np.dot(w_t,w_t_1)-1) < self.epsilon) or (iteration_time == (max_iter-1)):
+                    W_copy[i,:] = w_t
+                    w_t = self._calc_gs(W=W_copy,i=i)
+                    if (np.abs(np.dot(w_t,w_t_1)-1) < self.epsilon) or (iter_time == (max_iter-1)):
                         return w_t
                     else:
                         w_t_1 = w_t
@@ -208,7 +210,8 @@ class LiNGAM():
         if not use_sklearn:
             z, V   = self._whitening(self.X_center)
             W_z    = self._ICA(z,self.n_iter)
-            PDW    = self._PDW(W_z,V)
+            #from IPython.core.debugger import Pdb; Pdb().set_trace()
+            PDW    = self._PDW(W_z, V)
         #use sklearn's FastICA(neg entropy)
         else:
             PDW    = self._W_sklearn(self.X_center)
