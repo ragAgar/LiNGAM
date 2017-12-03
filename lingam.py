@@ -32,7 +32,6 @@ Model:
     e: Exogenous variable
     z: whitening variable(check, np.cov(z) is identity matrix))
 
-
 LiNGAM Estimation:
     STEP1:
         Centorize and Whitening (X) and get [z,V].
