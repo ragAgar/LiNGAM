@@ -53,6 +53,7 @@ LiNGAM Estimation:
         Linear Regression by causal order and replace B's value with coef.
         And get B.
 
+Please Note that we do not take responsibility or liability for this code.
 """
 class LiNGAM():
     def __init__(self,epsilon=1e-25):
