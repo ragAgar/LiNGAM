@@ -5,7 +5,7 @@ import seaborn as sns
 from tqdm import tqdm
 from scipy import optimize
 from sklearn.mixture import GaussianMixture
-from IPython.core.pylabtools import figsize
+#from IPython.core.pylabtools import figsize
 import matplotlib.pyplot as plt
 from sklearn.decomposition import FastICA
 from sklearn.linear_model import LinearRegression
